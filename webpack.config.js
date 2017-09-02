@@ -6,7 +6,7 @@ module.exports = {
         path: path.resolve(__dirname, 'build'),
         filename: 'simple-router.js',
         library: 'simpleRouter',
-        libraryTarget: 'var'
+        libraryTarget: 'umd'
     },
     module: {
         rules: [
