@@ -1,0 +1,34 @@
+{
+  "name": "simple-router",
+  "version": "1.0.0",
+  "description": "A simple Javascript UI router.",
+  "main": "build/simpleRouter.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack -w",
+    "dev": "babel src -w -d test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CalvinE/simple-router.git"
+  },
+  "keywords": [
+    "js",
+    "router",
+    "ui"
+  ],
+  "author": "Calvin L Echols",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/CalvinE/simple-router/issues"
+  },
+  "homepage": "https://github.com/CalvinE/simple-router#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.0",
+    "http-server": "^0.10.0",
+    "webpack": "^3.5.5"
+  }
+}
