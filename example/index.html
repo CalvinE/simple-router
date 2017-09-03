@@ -7,7 +7,25 @@
     <title>Document</title>
 </head>
 <body>
-    
+    <nav>
+        <ul>
+            <li>
+                <a href="#" route-target="mainOutlet" route-link="/home">Home</a>
+            </li>
+            <li>
+                <a href="#" route-target="mainOutlet" route-link="/about">About</a>
+            </li>
+            <li>
+                <a href="#" route-target="mainOutlet" route-link="/contact">Contact Us</a>
+            </li>
+        </ul>
+    </nav>
+    <div router-outlet="mainOutlet">
+        <h1>Main Outlet</h1>        
+    </div>
+    <div router-outlet="secondOutlet">
+        <h1>Second Outlet</h1>
+    </div>
 </body>
     <script type="text/javascript" src="../build/simple-router.js"></script>
 </html>

@@ -5,7 +5,7 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, 'build'),
         filename: 'simple-router.js',
-        library: 'simpleRouter',
+        // library: 'simpleRouter',
         libraryTarget: 'umd'
     },
     module: {
