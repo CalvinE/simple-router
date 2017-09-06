@@ -4,6 +4,37 @@ const defaultConfigOptions = {
     outletTargetAttrName: 'route-target' // should be a string
 }
 
+const defaultEventObject = {
+    postRouteProcessing: (data) => {
+        data.incrementor = 0;
+        return Promise.resolve(data);
+    },
+    preContentFetch: (data) => {
+        data.incrementor = 1;
+        return Promise.resolve(data);
+    },
+    postContentFetch: (data) => {
+        data.incrementor = 2;
+        return Promise.resolve(data);
+    },
+    handler: (data) => {
+        data.incrementor = 3;
+        return Promise.resolve(data);
+    },
+    preContentLoad: (data) => {
+        data.incrementor = 4;
+        return Promise.resolve(data);
+    },
+    postContentLoad: (data) => {
+        data.incrementor = 5;
+        return Promise.resolve(data);
+    },
+    postLinkHandle: (data) => {
+        data.incrementor = 6;
+        return Promise.resolve(data);
+    }    
+};
+
 export class SimpleRouter {
     constructor (config) {
         this._config = Object.assign({}, defaultConfigOptions, config);
@@ -17,7 +48,7 @@ export class SimpleRouter {
             link: null,
             handlers: {}
         };
-        this._routes = {};
+        this._routes = [];
 
         this.findLinks();
         this.findOutlets();
@@ -74,8 +105,15 @@ export class SimpleRouter {
         let link = ele.attributes.getNamedItem(this._config.linkAttrName).value;
         let targetName = ele.attributes.getNamedItem(this._config.outletTargetAttrName).value;
         let targetOutlet = this.findOutletByName(targetName);
-        const route = this.findRoute(ele, link, targetOutlet);
-        console.log(route);
+        const selectedRoute = this.findRoute(ele, link, targetOutlet);
+        console.log(selectedRoute);
+        this.handleRoute(selectedRoute).then((data) => {
+            console.log('handle route is complete.', data);    
+        }, (data) => {
+            this.handleLifeCycleFailure(data);
+        }).catch((data) => {
+            console.log('an exception was thrown in the life cycle chain.', arguments);  
+        });        
     }
 
     findRoute (element, link, targetOutlet) {
@@ -116,8 +154,34 @@ export class SimpleRouter {
         };
     }
 
-    handleRoute (route) {
+    handleRoute (selectedRoute) {
+        let data = {
+            params: selectedRoute.params
+        }
+        let route = selectedRoute.route;
+        return new Promise((resolve, reject) => {
+            route.events.postRouteProcessing(data).then((data) => {
+                route.events.preContentFetch(data).then((data) => {
+                    // throw 'ex';
+                    route.events.postContentFetch(data).then((data) => {
+                        route.events.handler(data).then((data) => {
+                            route.events.preContentLoad(data).then((data) => {
+                                route.events.postContentLoad(data).then((data) => {
+                                    route.events.postLinkHandle(data).then((data) => {
+                                        return resolve(data);
+                                    }, (data) => reject(data));
+                                }, (data) => reject(data));                                
+                            }, (data) => reject(data));
+                        }, (data) => reject(data));
+                    }, (data) => reject(data));
+                }, (data) => reject(data));
+            }, (data) => reject(data));
+         });
+    }
 
+    handleLifeCycleFailure(data) {
+        console.log('lifecycle failure!', data);
+        // return Promise.reject(data);
     }
 
     findOutletByName (name) {        
@@ -128,15 +192,13 @@ export class SimpleRouter {
         return outlet;
     }
 
-
-
     registerRoute (...args) {
         if(typeof args[0] === 'function') {
             this._defaultHandler.events = args[0];
         } else if (typeof args[0] === 'string') {
             this._routes.push({
                 href: args[0],
-                events: args[1] // TODO: if there are no handlers provided in the events object then throw exception.
+                events: Object.assign({}, defaultEventObject, args[1]) // TODO: if there are no handlers provided in the events object then throw exception.
             });
         }
     }
