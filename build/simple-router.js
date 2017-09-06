@@ -90,17 +90,26 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var defaultConfigOptions = {
     linkAttrName: 'route-link', // should be a string
-    outletAttrName: 'router-outlet',
-    outletTargetAttrName: 'route-target'
+    outletAttrName: 'router-outlet', // should be a string
+    outletTargetAttrName: 'route-target' // should be a string
 };
 
 var SimpleRouter = exports.SimpleRouter = function () {
     function SimpleRouter(config) {
         _classCallCheck(this, SimpleRouter);
 
-        this.config = Object.assign({}, defaultConfigOptions, config);
-        this.links = [];
-        this.outlets = [];
+        this._config = Object.assign({}, defaultConfigOptions, config);
+        this._links = [];
+        this._outlets = [];
+        this._defaultRoute = {
+            link: '/',
+            handlers: {}
+        };
+        this._notFoundRoute = {
+            link: null,
+            handlers: {}
+        };
+        this._routes = {};
 
         this.findLinks();
         this.findOutlets();
@@ -111,23 +120,24 @@ var SimpleRouter = exports.SimpleRouter = function () {
         value: function findLinks() {
             var _this = this;
 
-            var selector = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '[' + this.config.linkAttrName + ']';
+            var selector = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '[' + this._config.linkAttrName + ']';
             var baseElement = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : document;
 
+            this.clearDeadLinks();
             baseElement.querySelectorAll(selector).forEach(function (element, index, array) {
                 if (!element.isRegistered) {
                     element.isRegistered = true;
                     element.onclick = function (event) {
                         _this.handleLinkClick(event);
                     };
-                    _this.links.push(element);
+                    _this._links.push(element);
                 }
             }, this);
         }
     }, {
         key: 'clearDeadLinks',
         value: function clearDeadLinks() {
-            this.links = this.links.filter(function (element, index, array) {
+            this._links = this._links.filter(function (element, index, array) {
                 var stillExists = document.body.contains(element);
                 if (stillExists === false) {
                     element.isRegistered = false;
@@ -142,20 +152,21 @@ var SimpleRouter = exports.SimpleRouter = function () {
         value: function findOutlets() {
             var _this2 = this;
 
-            var selector = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '[' + this.config.outletAttrName + ']';
+            var selector = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '[' + this._config.outletAttrName + ']';
             var baseElement = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : document;
 
+            this.clearDeadOutlets();
             baseElement.querySelectorAll(selector).forEach(function (element, index, array) {
                 if (!element.isRegistered) {
                     element.isRegistered = true;
-                    _this2.outlets.push(element);
+                    _this2._outlets.push(element);
                 }
             }, this);
         }
     }, {
         key: 'clearDeadOutlets',
         value: function clearDeadOutlets() {
-            this.outlets = this.outlets.filter(function (element, index, array) {
+            this._outlets = this._outlets.filter(function (element, index, array) {
                 var stillExists = document.body.contains(element);
                 if (stillExists === false) {
                     element.isRegistered = false;
@@ -168,21 +179,85 @@ var SimpleRouter = exports.SimpleRouter = function () {
         key: 'handleLinkClick',
         value: function handleLinkClick(event) {
             var ele = event.target;
-            var link = ele.attributes.getNamedItem(this.config.linkAttrName).value;
-            var targetName = ele.attributes.getNamedItem(this.config.outletTargetAttrName).value;
+            var link = ele.attributes.getNamedItem(this._config.linkAttrName).value;
+            var targetName = ele.attributes.getNamedItem(this._config.outletTargetAttrName).value;
             var targetOutlet = this.findOutletByName(targetName);
-            console.log('link clicked.');
+            var route = this.findRoute(ele, link, targetOutlet);
+            console.log(route);
         }
+    }, {
+        key: 'findRoute',
+        value: function findRoute(element, link, targetOutlet) {
+            var specifiedRoute = link == this._defaultRoute.link ? this._defaultRoute : null;
+            var linkParts = link.split('/');
+            var params = null;
+
+            specifiedRoute = this._routes.find(function (route) {
+                var routeLinkParts = route.href.split('/');
+                var doesItMatch = true;
+                if (routeLinkParts.length === linkParts.length) {
+                    // Does the incomming link have the same number of parts as the route link being examined.
+                    params = {};
+                    for (var i = 0; i < routeLinkParts.length; i++) {
+                        if (linkParts[i] === routeLinkParts[i]) {
+                            console.log('these parts match!');
+                        } else if (routeLinkParts[i].startsWith(':') === true) {
+                            // This would be a route parameter. // TODO make optional params?
+                            params[routeLinkParts[i].substring(1)] = linkParts[i];
+                        } else {
+                            console.log('no route matches!');
+                            doesItMatch = false;
+                            break;
+                        }
+                    }
+                }
+                return doesItMatch;
+            }, this);
+
+            if (!specifiedRoute) {
+                specifiedRoute = this._notFoundRoute;
+                params = {
+                    linkProvided: link
+                };
+            }
+
+            return {
+                route: specifiedRoute,
+                params: params
+            };
+        }
+    }, {
+        key: 'handleRoute',
+        value: function handleRoute(route) {}
     }, {
         key: 'findOutletByName',
         value: function findOutletByName(name) {
             var _this3 = this;
 
-            var outlet = this.outlets.find(function (element) {
-                var attr = element.attributes.getNamedItem(_this3.config.outletAttrName);
+            var outlet = this._outlets.find(function (element) {
+                var attr = element.attributes.getNamedItem(_this3._config.outletAttrName);
                 return attr && attr.value == name;
             }, this);
             return outlet;
+        }
+    }, {
+        key: 'registerRoute',
+        value: function registerRoute() {
+            if (typeof (arguments.length <= 0 ? undefined : arguments[0]) === 'function') {
+                this._defaultHandler.events = arguments.length <= 0 ? undefined : arguments[0];
+            } else if (typeof (arguments.length <= 0 ? undefined : arguments[0]) === 'string') {
+                this._routes.push({
+                    href: arguments.length <= 0 ? undefined : arguments[0],
+                    events: arguments.length <= 1 ? undefined : arguments[1] // TODO: if there are no handlers provided in the events object then throw exception.
+                });
+            }
+        }
+    }, {
+        key: 'unregisterRoute',
+        value: function unregisterRoute(routeLink) {
+            if (this._defaultHandler.link == routeLink) {
+                this._defaultHandler.events = null;
+            } // TODO: Remove routes from array
         }
     }]);
 
