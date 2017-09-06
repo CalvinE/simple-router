@@ -144,6 +144,7 @@ export class SimpleRouter {
         let targetName = ele.attributes.getNamedItem(this._config.outletTargetAttrName).value;
         let targetOutlet = this.findOutletByName(targetName);
         const selectedRoute = this.findRoute(ele, link, targetOutlet);
+        selectedRoute.targetOutlet = targetOutlet;
         console.log(selectedRoute);
         this.handleRoute(selectedRoute).then((data) => {
             console.log('handle route is complete.', data);    
