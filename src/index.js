@@ -100,22 +100,6 @@ export class SimpleRouter {
         });        
     }
 
-    handleLinkClick (event) {
-        let ele = event.target;
-        let link = ele.attributes.getNamedItem(this._config.linkAttrName).value;
-        let targetName = ele.attributes.getNamedItem(this._config.outletTargetAttrName).value;
-        let targetOutlet = this.findOutletByName(targetName);
-        const selectedRoute = this.findRoute(ele, link, targetOutlet);
-        console.log(selectedRoute);
-        this.handleRoute(selectedRoute).then((data) => {
-            console.log('handle route is complete.', data);    
-        }, (data) => {
-            this.handleLifeCycleFailure(data);
-        }).catch((data) => {
-            console.log('an exception was thrown in the life cycle chain.', arguments);  
-        });        
-    }
-
     findRoute (element, link, targetOutlet) {
         let specifiedRoute = (link == this._defaultRoute.link) ? this._defaultRoute : null;
         const linkParts = link.split('/');
@@ -153,6 +137,21 @@ export class SimpleRouter {
             params: params
         };
     }
+    
+    handleLinkClick (event) {
+        let ele = event.target;
+        let link = ele.attributes.getNamedItem(this._config.linkAttrName).value;
+        let targetName = ele.attributes.getNamedItem(this._config.outletTargetAttrName).value;
+        let targetOutlet = this.findOutletByName(targetName);
+        const selectedRoute = this.findRoute(ele, link, targetOutlet);
+        console.log(selectedRoute);
+        this.handleRoute(selectedRoute).then((data) => {
+            console.log('handle route is complete.', data);    
+        }, (data) => this.handleLifeCycleFailure(data)
+        )['catch']((data) => {
+            console.log('an exception was thrown in the life cycle chain.', arguments);  
+        });        
+    }
 
     handleRoute (selectedRoute) {
         let data = {
@@ -168,19 +167,21 @@ export class SimpleRouter {
                             route.events.preContentLoad(data).then((data) => {
                                 route.events.postContentLoad(data).then((data) => {
                                     route.events.postLinkHandle(data).then((data) => {
+                                        let x = route.fake.faker;
                                         return resolve(data);
-                                    }, (data) => reject(data));
-                                }, (data) => reject(data));                                
-                            }, (data) => reject(data));
-                        }, (data) => reject(data));
-                    }, (data) => reject(data));
-                }, (data) => reject(data));
-            }, (data) => reject(data));
+                                    }, (data) => reject(data)).catch((data) => reject(data));
+                                }, (data) => reject(data)).catch((data) => reject(data));                                
+                            }, (data) => reject(data)).catch((data) => reject(data));
+                        }, (data) => reject(data)).catch((data) => reject(data));
+                    }, (data) => reject(data)).catch((data) => reject(data));
+                }, (data) => reject(data)).catch((data) => reject(data));
+            }, (data) => reject(data)).catch((data) => reject(data));
          });
     }
 
     handleLifeCycleFailure(data) {
-        console.log('lifecycle failure!', data);
+        // TODO: add on failure callback for route, and potentially check if data passed into here is error based on properties available.
+        console.error('A failure occurred in lifecycle chain!', typeof data, data);
         // return Promise.reject(data);
     }
 

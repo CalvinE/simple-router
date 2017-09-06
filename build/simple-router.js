@@ -9591,6 +9591,8 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -9714,26 +9716,6 @@ var SimpleRouter = exports.SimpleRouter = function () {
             });
         }
     }, {
-        key: 'handleLinkClick',
-        value: function handleLinkClick(event) {
-            var _this3 = this,
-                _arguments = arguments;
-
-            var ele = event.target;
-            var link = ele.attributes.getNamedItem(this._config.linkAttrName).value;
-            var targetName = ele.attributes.getNamedItem(this._config.outletTargetAttrName).value;
-            var targetOutlet = this.findOutletByName(targetName);
-            var selectedRoute = this.findRoute(ele, link, targetOutlet);
-            console.log(selectedRoute);
-            this.handleRoute(selectedRoute).then(function (data) {
-                console.log('handle route is complete.', data);
-            }, function (data) {
-                _this3.handleLifeCycleFailure(data);
-            }).catch(function (data) {
-                console.log('an exception was thrown in the life cycle chain.', _arguments);
-            });
-        }
-    }, {
         key: 'findRoute',
         value: function findRoute(element, link, targetOutlet) {
             var specifiedRoute = link == this._defaultRoute.link ? this._defaultRoute : null;
@@ -9775,6 +9757,26 @@ var SimpleRouter = exports.SimpleRouter = function () {
             };
         }
     }, {
+        key: 'handleLinkClick',
+        value: function handleLinkClick(event) {
+            var _this3 = this,
+                _arguments = arguments;
+
+            var ele = event.target;
+            var link = ele.attributes.getNamedItem(this._config.linkAttrName).value;
+            var targetName = ele.attributes.getNamedItem(this._config.outletTargetAttrName).value;
+            var targetOutlet = this.findOutletByName(targetName);
+            var selectedRoute = this.findRoute(ele, link, targetOutlet);
+            console.log(selectedRoute);
+            this.handleRoute(selectedRoute).then(function (data) {
+                console.log('handle route is complete.', data);
+            }, function (data) {
+                return _this3.handleLifeCycleFailure(data);
+            })['catch'](function (data) {
+                console.log('an exception was thrown in the life cycle chain.', _arguments);
+            });
+        }
+    }, {
         key: 'handleRoute',
         value: function handleRoute(selectedRoute) {
             var data = {
@@ -9790,26 +9792,41 @@ var SimpleRouter = exports.SimpleRouter = function () {
                                 route.events.preContentLoad(data).then(function (data) {
                                     route.events.postContentLoad(data).then(function (data) {
                                         route.events.postLinkHandle(data).then(function (data) {
+                                            var x = route.fake.faker;
                                             return resolve(data);
                                         }, function (data) {
+                                            return reject(data);
+                                        }).catch(function (data) {
                                             return reject(data);
                                         });
                                     }, function (data) {
                                         return reject(data);
+                                    }).catch(function (data) {
+                                        return reject(data);
                                     });
                                 }, function (data) {
+                                    return reject(data);
+                                }).catch(function (data) {
                                     return reject(data);
                                 });
                             }, function (data) {
                                 return reject(data);
+                            }).catch(function (data) {
+                                return reject(data);
                             });
                         }, function (data) {
+                            return reject(data);
+                        }).catch(function (data) {
                             return reject(data);
                         });
                     }, function (data) {
                         return reject(data);
+                    }).catch(function (data) {
+                        return reject(data);
                     });
                 }, function (data) {
+                    return reject(data);
+                }).catch(function (data) {
                     return reject(data);
                 });
             });
@@ -9817,7 +9834,8 @@ var SimpleRouter = exports.SimpleRouter = function () {
     }, {
         key: 'handleLifeCycleFailure',
         value: function handleLifeCycleFailure(data) {
-            console.log('lifecycle failure!', data);
+            // TODO: add on failure callback for route, and potentially check if data passed into here is error based on properties available.
+            console.error('A failure occurred in lifecycle chain!', typeof data === 'undefined' ? 'undefined' : _typeof(data), data);
             // return Promise.reject(data);
         }
     }, {
