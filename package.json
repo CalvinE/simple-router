@@ -23,9 +23,7 @@
     "url": "https://github.com/CalvinE/simple-router/issues"
   },
   "homepage": "https://github.com/CalvinE/simple-router#readme",
-  "dependencies": {
-    "babel-polyfill": "^6.26.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
