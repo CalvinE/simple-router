@@ -1,42 +1,14 @@
-const defaultEvents = {
-    postRouteProcessing: (callback) => {
-
-    }
-
-}
-
 export class Route {
-    constructor(href, events, isDefaultRoute = false, isNotFoundRoute = false;) {
-        this.href = href;
-        this.isDefaultRoute = isDefaultRoute;
-        this.isNotFoundRoute = isNotFoundRoute;
+    constructor(routeUrl, events, templateUrl) {
+        this.routeUrl = routeUrl;
+        this.templateUrl = templateUrl;
 
-        this.postRouteProcessing = events.postRouteProcessing || ((data) => {
-            return this.preFetchContent(data);
-        });
-
-        this.preFetchContent = events.preFetchContent || ((data) => {
-            return this.postFetchContent(data);
-        });
-
-        this.postFetchContent = events.postFetchContent || ((data) => {
-            return this.handler(data);
-        });
-
-        this.handler = events.handler || ((data) => {
-            return this.preContentLoad(data);
-        });
-
-        this.preContentLoad = events.preContentLoad || ((data) => {
-            return this.postContentLoad(data);
-        });
-
-        this.postContentLoad = events.postContentLoad || ((data) => {
-            return this.postRouteHandling(data);
-        });
-
-        this.postRouteHandling = events.postRouteHandling || ((data) => {
-            return data;
-        });
+        this.postRouteProcessing = events.postRouteProcessing;
+        this.preFetchContent = events.preFetchContent;
+        this.postFetchContent = events.postFetchContent;
+        this.handler = events.handler;
+        this.preContentLoad = events.preContentLoad;
+        this.postContentLoad = events.postContentLoad;
+        this.postRouteHandling = events.postRouteHandling;
     }
 }

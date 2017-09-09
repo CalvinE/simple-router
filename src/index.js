@@ -1,117 +1,87 @@
-const defaultConfigOptions = {
-    linkAttrName: 'route-link', // should be a string
-    outletAttrName: 'router-outlet', // should be a string
-    outletTargetAttrName: 'route-target' // should be a string
-}
-
-const defaultEventObject = {
-    postRouteProcessing: (data) => {
-        data.incrementor = 0;
-        return Promise.resolve(data);
-    },
-    preContentFetch: (data) => {
-        data.incrementor = 1;
-        return Promise.resolve(data);
-    },
-    postContentFetch: (data) => {
-        data.incrementor = 2;
-        return Promise.resolve(data);
-    },
-    handler: (data) => {
-        data.incrementor = 3;
-        return Promise.resolve(data);
-    },
-    preContentLoad: (data) => {
-        data.incrementor = 4;
-        return Promise.resolve(data);
-    },
-    postContentLoad: (data) => {
-        data.incrementor = 5;
-        return Promise.resolve(data);
-    },
-    postLinkHandle: (data) => {
-        data.incrementor = 6;
-        return Promise.resolve(data);
-    }    
-};
-
+import { Link } from './Link';
+import { Route } from './Route';
+import { Outlet } from './Outlet'
+// TODO: Add default routes to outlets as an option. 
 export class SimpleRouter {
-    constructor (config) {
-        this._config = Object.assign({}, defaultConfigOptions, config);
+    constructor(config) {
+        this._config = config; //Object.assign({}, defaultConfigOptions, config);
         this._links = [];
         this._outlets = [];
-        this._defaultRoute = {
-            link: '/',
-            handlers: {}
-        };
-        this._notFoundRoute = {
-            link: null,
-            handlers: {}
-        };
         this._routes = [];
+        this.current = null;
+        this._defaultRoute = new Route('/', {
+            handler: () => {}
+        }, null);
+        this._notFoundRoute = new Route(null, {
+            handler: () => {}
+        }, '');
 
-        this.findLinks();
         this.findOutlets();
+        this.findLinks();
+
     }
 
-    findLinks (selector = `[${this._config.linkAttrName}]`, baseElement = document) {
-        this.clearDeadLinks();
-        baseElement.querySelectorAll(selector).forEach((element, index, array) => {
-            if (!element.isRegistered) {
-                element.isRegistered = true;
-                element.onclick = (event) => {
-                    this.handleLinkClick(event);
-                };
-                this._links.push(element);
-            }
-        }, this);
-    }
-
-    clearDeadLinks () {
-        this._links = this._links.filter((element, index, array) => {
-            const stillExists = document.body.contains(element);
-            if (stillExists === false) {
-                element.isRegistered = false;
-                element.onclick = null;
-                element = null;
-            }
-            return stillExists;
-        });        
-    }
-
-    findOutlets (selector = `[${this._config.outletAttrName}]`, baseElement = document) {
+    findOutlets(selector = 'router-outlet', baseElement = document) {
         this.clearDeadOutlets();
-        baseElement.querySelectorAll(selector).forEach((element, index, array) => {
+        baseElement.querySelectorAll(`[${selector}]`).forEach((element, index, array) => {
             if (!element.isRegistered) {
                 element.isRegistered = true;
-                this._outlets.push(element);
+                this._outlets.push(new Outlet(element, this.getAttributeValueByName(element, selector)));
             }
         }, this);
     }
-    
-    clearDeadOutlets () {
-        this._outlets = this._outlets.filter((element, index, array) => {
-            const stillExists = document.body.contains(element);
+
+    clearDeadOutlets() {
+        this._outlets = this._outlets.filter((outlet, index, array) => {
+            const stillExists = document.body.contains(outlet.element);
             if (stillExists === false) {
-                element.isRegistered = false;
-                element = null;
+                outlet.element.isRegistered = false;
+                outlet.element = null;
             }
             return stillExists;
-        });        
+        });
     }
 
-    findRoute (element, link, targetOutlet) {
-        let specifiedRoute = (link == this._defaultRoute.link) ? this._defaultRoute : null;
-        const linkParts = link.split('/');
+    findOutletByName(name) {
+        var outlet = this._outlets.find((possibleOutlet) => {
+            return (possibleOutlet.name == name);
+        }, this);
+        return outlet;
+    }
+
+    findLinks(selector = 'route-url', baseElement = document) {
+        this.clearDeadLinks();
+        baseElement.querySelectorAll(`[${selector}]`).forEach((element) => {
+            if (!element.isRegistered) {
+                this._links.push(new Link(element, this.findOutletByName(this.getAttributeValueByName(element, 'route-target')), this.handleLinkClick.bind(this)));
+            }
+        }, this);
+    }
+
+    clearDeadLinks() {
+        this._links = this._links.filter((link) => {
+            const stillExists = document.body.contains(link.element);
+            if (stillExists === false) {
+                link.element.isRegistered = false;
+                link.element.onclick = null;
+                link.element = null;
+            } // TODO: what is flink exists but outlet no longer exists...
+            return stillExists;
+        });
+    }
+
+    findRoute(link) {
+        let specifiedRoute = (link.url == this._defaultRoute.link) ? this._defaultRoute : null;
+        const linkParts = link.url.split('/');
         let params = null;
 
         specifiedRoute = this._routes.find((route) => {
-            const routeLinkParts = route.href.split('/');
+            const routeLinkParts = route.routeUrl.split('/');
             let doesItMatch = true;
-            if(routeLinkParts.length === linkParts.length) { // Does the incomming link have the same number of parts as the route link being examined.
+            if (routeLinkParts.length === linkParts.length) { // Does the incomming link have the same number of parts as the route link being examined.
                 params = {};
-                for(let i = 0; i < routeLinkParts.length; i++) {
-                    if(linkParts[i] === routeLinkParts[i]) {
+                for (let i = 0; i < routeLinkParts.length; i++) {
+                    if (linkParts[i] === routeLinkParts[i]) {
                         console.log('these parts match!')
                     } else if (routeLinkParts[i].startsWith(':') === true) { // This would be a route parameter. // TODO make optional params?
                         params[routeLinkParts[i].substring(1)] = linkParts[i];
@@ -121,14 +91,16 @@ export class SimpleRouter {
                         break;
                     }
                 }
+            } else {
+                doesItMatch = false;
             }
             return doesItMatch;
         }, this);
 
-        if(!specifiedRoute) {
+        if (!specifiedRoute) {
             specifiedRoute = this._notFoundRoute;
             params = {
-                linkProvided: link
+                linkProvided: link.url
             }
         }
 
@@ -137,47 +109,19 @@ export class SimpleRouter {
             params: params
         };
     }
-    
-    handleLinkClick (event) {
+
+    handleLinkClick(event) {
         let ele = event.target;
-        let link = ele.attributes.getNamedItem(this._config.linkAttrName).value;
-        let targetName = ele.attributes.getNamedItem(this._config.outletTargetAttrName).value;
-        let targetOutlet = this.findOutletByName(targetName);
-        const selectedRoute = this.findRoute(ele, link, targetOutlet);
-        selectedRoute.targetOutlet = targetOutlet;
+        let link = this._links.find((possibleLink) => {
+            return ele === possibleLink.element;
+        });
+        const selectedRoute = this.findRoute(link);
         console.log(selectedRoute);
-        this.handleRoute(selectedRoute).then((data) => {
-            console.log('handle route is complete.', data);    
-        }, (data) => this.handleLifeCycleFailure(data)
-        )['catch']((data) => {
-            console.log('an exception was thrown in the life cycle chain.', arguments);  
-        });        
+        this.handleRoute(selectedRoute); // TODO: add callback for post processing
     }
 
-    handleRoute (selectedRoute) {
-        let data = {
-            params: selectedRoute.params
-        }
-        let route = selectedRoute.route;
-        return new Promise((resolve, reject) => {
-            route.events.postRouteProcessing(data).then((data) => {
-                route.events.preContentFetch(data).then((data) => {
-                    // throw 'ex';
-                    route.events.postContentFetch(data).then((data) => {
-                        route.events.handler(data).then((data) => {
-                            route.events.preContentLoad(data).then((data) => {
-                                route.events.postContentLoad(data).then((data) => {
-                                    route.events.postLinkHandle(data).then((data) => {
-                                        let x = route.fake.faker;
-                                        return resolve(data);
-                                    }, (data) => reject(data)).catch((data) => reject(data));
-                                }, (data) => reject(data)).catch((data) => reject(data));                                
-                            }, (data) => reject(data)).catch((data) => reject(data));
-                        }, (data) => reject(data)).catch((data) => reject(data));
-                    }, (data) => reject(data)).catch((data) => reject(data));
-                }, (data) => reject(data)).catch((data) => reject(data));
-            }, (data) => reject(data)).catch((data) => reject(data));
-         });
+    handleRoute(selectedRoute) {
+
     }
 
     handleLifeCycleFailure(data) {
@@ -186,28 +130,23 @@ export class SimpleRouter {
         // return Promise.reject(data);
     }
 
-    findOutletByName (name) {        
-        var outlet = this._outlets.find((element) => {
-            const attr = element.attributes.getNamedItem(this._config.outletAttrName);
-            return (attr && attr.value == name);
-        }, this);
-        return outlet;
-    }
-
-    registerRoute (...args) {
-        if(typeof args[0] === 'function') {
-            this._defaultHandler.events = args[0];
+    registerRoute(...args) {
+        if (typeof args[0] === 'function') {
+            this._defaultRoute.events = new Route('/', args[0], args[1])
         } else if (typeof args[0] === 'string') {
-            this._routes.push({
-                href: args[0],
-                events: Object.assign({}, defaultEventObject, args[1]) // TODO: if there are no handlers provided in the events object then throw exception.
-            });
+            this._routes.push(
+                new Route(args[0], args[1], args[2])
+            );
         }
     }
 
-    unregisterRoute (routeLink) {
-        if (this._defaultHandler.link == routeLink) {
-            this._defaultHandler.events = null;
+    unregisterRoute(routeUrl) {
+        if (this._defaultRoute.url == routeLink) {
+            this._defaultRoute.events = null;
         } // TODO: Remove routes from array
+    }
+
+    getAttributeValueByName (element, attrName) {
+        return element.attributes.getNamedItem(attrName).value;
     }
 }
