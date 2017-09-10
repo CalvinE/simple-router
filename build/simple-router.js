@@ -103,10 +103,12 @@ var SimpleRouter = exports.SimpleRouter = function () {
         _classCallCheck(this, SimpleRouter);
 
         this._config = config; //Object.assign({}, defaultConfigOptions, config);
+        this._parser = new DOMParser();
         this._links = [];
         this._outlets = [];
         this._routes = [];
-        this.current = null;
+        this._routerState = [];
+        this._current = null;
         this._defaultRoute = new _Route.Route('/', {
             handler: function handler() {}
         }, null);
@@ -233,12 +235,86 @@ var SimpleRouter = exports.SimpleRouter = function () {
                 return ele === possibleLink.element;
             });
             var selectedRoute = this.findRoute(link);
-            console.log(selectedRoute);
-            this.handleRoute(selectedRoute); // TODO: add callback for post processing
+            var state = {
+                link: link,
+                route: selectedRoute.route,
+                params: selectedRoute.params
+            };
+            console.log(state);
+            this.handleRoute(state); // TODO: add callback for post processing
         }
     }, {
+        key: 'fetchContent',
+        value: function fetchContent(url, type) {
+            var method = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "GET";
+            var headers = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+            var user = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
+            var password = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : null;
+
+            var xhr = new XMLHttpRequest();
+            xhr.open(method, url, true, user, password);
+            if (headers) {
+                headers.forEach(function (header) {
+                    xhr.setRequestHeader(header.name, header.value);
+                }, this);
+            }
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    //TODO: check xhr for info on what was returned.
+                    onFetchResponse();
+                }
+            };
+            xhr.send();
+        }
+    }, {
+        key: 'onFetchResponse',
+        value: function onFetchResponse() {}
+    }, {
         key: 'handleRoute',
-        value: function handleRoute(selectedRoute) {}
+        value: function handleRoute(state) {
+            var isPrevAction = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+
+            if (state.route.postRouteProcessing) {
+                state.route.postRouteProcessing(state);
+            }
+
+            if (this._current) {
+                this._routerState.push(this._currnet);
+            }
+
+            this._current = state;
+
+            if (state.route.preFetchContent) {
+                state.route.preFetchContent(state);
+            }
+
+            //Fetch content here.
+
+            (function () {})();
+
+            if (state.route.postFetchContent) {
+                state.route.postFetchContent(state);
+            }
+
+            if (state.route.preContentLoad) {
+                state.route.preContentLoad(state);
+            }
+
+            //Load content into the DOM here.
+
+            if (state.route.postContentLoad) {
+                state.route.postContentLoad(state);
+            }
+
+            if (state.route.handler) {
+                state.route.handler(state);
+            }
+
+            if (state.route.postLinkHandler) {
+                state.route.postLinkHandler(state);
+            }
+        }
     }, {
         key: 'handleLifeCycleFailure',
         value: function handleLifeCycleFailure(data) {
@@ -311,11 +387,14 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Route = exports.Route = function Route(routeUrl, events, templateUrl) {
+var Route = exports.Route = function Route(routeUrl, events) {
+    var templateUrl = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+    var styleUrl = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+    var scriptUrl = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
+
     _classCallCheck(this, Route);
 
     this.routeUrl = routeUrl;
-    this.templateUrl = templateUrl;
 
     this.postRouteProcessing = events.postRouteProcessing;
     this.preFetchContent = events.preFetchContent;
@@ -324,6 +403,21 @@ var Route = exports.Route = function Route(routeUrl, events, templateUrl) {
     this.preContentLoad = events.preContentLoad;
     this.postContentLoad = events.postContentLoad;
     this.postRouteHandling = events.postRouteHandling;
+
+    this.content = {
+        html: templateUrl ? {
+            url: templateUrl,
+            gathered: false
+        } : null,
+        css: styleUrl ? {
+            url: styleUrl,
+            gathered: false
+        } : null,
+        js: scriptUrl ? {
+            url: scriptUrl,
+            gathered: false
+        } : null
+    };
 };
 
 /***/ }),
@@ -352,14 +446,19 @@ var Outlet = exports.Outlet = function () {
     _createClass(Outlet, [{
         key: "hasContent",
         value: function hasContent() {
-            return this.element.hasChildren();
+            return this.element.children.length !== 0;
         }
     }, {
         key: "clearOutlet",
         value: function clearOutlet() {
-            this.element.childNodes.forEach(function (child) {
-                this.element.removeChild(child);
-            }, this);
+            while (this.element.children.length > 0) {
+                this.element.removeChild(this.element.children[0]);
+            }
+        }
+    }, {
+        key: "addContentString",
+        value: function addContentString(content) {
+            this.element.innerHTML = content;
         }
     }, {
         key: "addContent",

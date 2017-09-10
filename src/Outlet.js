@@ -5,13 +5,17 @@ export class Outlet {
     }
 
     hasContent () {
-        return this.element.hasChildren();
+        return this.element.children.length !== 0;
     }
 
     clearOutlet () {
-        this.element.childNodes.forEach(function(child) {
-            this.element.removeChild(child);
-        }, this);
+        while(this.element.children.length > 0) {
+            this.element.removeChild(this.element.children[0]);
+        }
+    }
+
+    addContentString(content) {
+        this.element.innerHTML = content;
     }
 
     addContent(content) {
