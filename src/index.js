@@ -155,12 +155,6 @@ export class SimpleRouter {
             state.route.postRouteProcessing(state);
         }
 
-        if(!!this._current) {
-            this._routerState.push(this._currnet);
-        }
-        
-        this._current = state;
-
         if(this.shouldFetch(state) === true) {
 
             if (state.route.preFetchContent) {
@@ -247,6 +241,12 @@ export class SimpleRouter {
             if (state.route.handler) {
                 state.route.handler(state);
             }
+
+            if(!!this._current) {
+                this._routerState.push(this._currnet);
+            }
+            
+            this._current = state;
 
             if (state.route.postLinkHandler) {
                 state.route.postLinkHandler(state);
