@@ -10,6 +10,10 @@ export class SimpleRouter {
         this._outlets = [];
         this._routes = [];
         this._routerState = [];
+        this._cssLoaded = false;
+        this._jsLoaded = false;
+        this._onCssLoaded = null;
+        this._onJsLoaded = null;
         this._current = null;
         this._defaultRoute = new Route('/', {
             handler: () => {}
@@ -161,28 +165,29 @@ export class SimpleRouter {
         
         this._current = state;
 
-        if (state.route.preFetchContent) {
-            state.route.preFetchContent(state);
+        if(shouldFetch(state) === true) {
+
+            if (state.route.preFetchContent) {
+                state.route.preFetchContent(state);
+            }
+
+            //Fetch content here.            
+            
+            if (state.route.postFetchContent) {
+                state.route.postFetchContent(state);
+            }
         }
 
-        //Fetch content here.
-
-        (() => {
-
-        })();
-        
-        if (state.route.postFetchContent) {
-            state.route.postFetchContent(state);
-        }
-
-        if (state.route.preContentLoad) {
-            state.route.preContentLoad(state);
-        }
+        if(shouldLoad(state)) {
+            if (state.route.preContentLoad) {
+                state.route.preContentLoad(state);
+            }
         
         //Load content into the DOM here.
-
-        if (state.route.postContentLoad) {
-            state.route.postContentLoad(state);
+        
+            if (state.route.postContentLoad) {
+                state.route.postContentLoad(state);
+            }
         }
 
         if (state.route.handler) {
@@ -193,6 +198,27 @@ export class SimpleRouter {
             state.route.postLinkHandler(state);
         }
 
+    }
+
+    shouldFetch(state) {
+        let shouldFetch = false;
+        const content = state.route.content;
+        if (!!content.html && !!content.html.url) {
+            shouldFetch = true;
+        }
+        if (!!content.css && !!content.css.url) {
+            shouldFetch = true;
+        }
+        if (!!content.js && !!content.js.url) {
+            shouldFetch = true;
+        }
+        return shouldFetch;
+    }
+
+    shouldLoad (state) {
+        let shouldLoad = false;
+
+        return shouldLoad;
     }
 
     handleLifeCycleFailure(data) {

@@ -8,6 +8,7 @@ module.exports = {
         // library: 'simpleRouter',
         libraryTarget: 'umd'
     },
+    devtool: 'source-map',
     module: {
         rules: [
             {
