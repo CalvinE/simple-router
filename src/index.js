@@ -149,55 +149,111 @@ export class SimpleRouter {
 
     }
 
-    onFetchResponse() {
-
-    }
-
     handleRoute(state, isPrevAction = false) {
 
         if (state.route.postRouteProcessing) {
             state.route.postRouteProcessing(state);
         }
 
-        if(this._current) {
+        if(!!this._current) {
             this._routerState.push(this._currnet);
         }
         
         this._current = state;
 
-        if(shouldFetch(state) === true) {
+        if(this.shouldFetch(state) === true) {
 
             if (state.route.preFetchContent) {
                 state.route.preFetchContent(state);
             }
 
-            //Fetch content here.            
-            
-            if (state.route.postFetchContent) {
-                state.route.postFetchContent(state);
-            }
+            this.fetch(state);
+        } else {
+            state.templateTextInstance = state.route.content.html.template;
+            this.postFetch(state);
         }
 
-        if(shouldLoad(state)) {
+    }
+
+    fetch(state) {
+        //Fetch!
+        if (state.route.postFetchContent) {
+            state.route.postFetchContent(state);
+        }
+    }
+
+    postFetch(state) {
+        if(this.shouldLoad(state)) {
             if (state.route.preContentLoad) {
                 state.route.preContentLoad(state);
             }
         
-        //Load content into the DOM here.
+            //Load content into the DOM here.
+            this.load(state);
+            
+        } else {
+            this.postLoad(state);
+        }
+
         
+    }
+
+    load(state) {
+        let head = document.getElementsByTagName('head')[0];
+        let needToWait = false;
+        if (!!state.templateTextInstance) {
+            state.link.outlet.addContentString(state.templateTextInstance)
+        }
+
+        const content = state.route.content;
+        
+        if(!!content.css && !content.css.loaded) { // Right now we only support css loading via URL.
+            needToWait = true;
+            let link = document.createElement('link');
+            link.rel  = 'stylesheet';
+            link.type = 'text/css';
+            link.href = content.css.url;
+            link.media = 'all';
+            link.onload = () => {
+                state.route.content.css.loaded = true;
+                this.postLoad(state);
+            };
+            head.appendChild(link);
+        }
+
+        if(!!content.js && !content.js.loaded) { // Right now we only support js loading via URL.
+            needToWait = true;
+            let js = document.createElement('script');
+            js.type = 'application/javascript';
+            js.src = content.js.url
+            js.onload = () => {
+                state.route.content.js.loaded = true;
+                this.postLoad(state);
+            };
+        }
+
+        if (!needToWait) {
+            this.postLoad(state);
+        }
+    }
+
+    postLoad(state) {
+        const content = state.route.content;
+        if((!content.html || content.html.loaded) && (!content.css || content.css.loaded) && (!content.js || content.js.loaded)) {
             if (state.route.postContentLoad) {
                 state.route.postContentLoad(state);
             }
-        }
 
-        if (state.route.handler) {
-            state.route.handler(state);
-        }
+            if (state.route.handler) {
+                state.route.handler(state);
+            }
 
-        if (state.route.postLinkHandler) {
-            state.route.postLinkHandler(state);
+            if (state.route.postLinkHandler) {
+                state.route.postLinkHandler(state);
+            }
+        } else {
+            console.log('Still waiting');
         }
-
     }
 
     shouldFetch(state) {
@@ -206,18 +262,22 @@ export class SimpleRouter {
         if (!!content.html && !!content.html.url) {
             shouldFetch = true;
         }
-        if (!!content.css && !!content.css.url) {
-            shouldFetch = true;
-        }
-        if (!!content.js && !!content.js.url) {
-            shouldFetch = true;
-        }
         return shouldFetch;
     }
 
     shouldLoad (state) {
         let shouldLoad = false;
-
+        const content = state.route.content;
+        console.log(!!state.templateTextInstance);
+        if (!!state.templateTextInstance) {
+            shouldLoad = true;
+        }
+        if (!shouldLoad && !!content.css && !!content.css.url) {
+            shouldLoad = true;
+        }
+        if (!shouldLoad && !!content.js && !!content.js.url) {
+            shouldLoad = true;
+        }
         return shouldLoad;
     }
 

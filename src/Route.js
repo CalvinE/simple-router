@@ -23,12 +23,15 @@ export class Route {
         let htmlSection = null;
         if(!!template) {
             htmlSection = {};
-            if(isHTMLString(template) === true) {
+            if (template.innerHTML && isHTMLString(template.innerHTML) === true) { // Handle template objects being pased in the form of say a script tag with content inside of it.
+                htmlSection.template = template.innerHTML;
+                htmlSection.loaded = true;
+            } else if (isHTMLString(template) === true) { // Handle a string HTML template
                 htmlSection.template = template;
-                htmlSection.gathered = true;
-            } else {
+                htmlSection.loaded = true;
+            } else { // Handle a URL which will need to be fetched upon routing.
                 htmlSection.url = template;
-                htmlSection.gathered = false;
+                htmlSection.loaded = false;
             }
         }
 
@@ -36,11 +39,11 @@ export class Route {
             html: htmlSection,
             css: (!!styleUrl) ? {
                 url: styleUrl,
-                gathered: false
+                loaded: false
             } : null,
             js: (!!scriptUrl) ? {
                 url: scriptUrl,
-                gathered: false
+                loaded: false
             } : null
         };
     }
