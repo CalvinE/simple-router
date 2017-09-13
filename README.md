@@ -13,3 +13,7 @@ The aim here is to have a simple pure JS UI router for applications where a full
 
 ### Examples
 * TODO
+
+### TODO List
+* Handle back navigation.
+* Handle fetching remote html templates.
