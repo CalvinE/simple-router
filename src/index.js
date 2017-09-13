@@ -131,24 +131,6 @@ export class SimpleRouter {
         this.handleRoute(state); // TODO: add callback for post processing
     }
 
-    fetchContent(url, type, method = "GET", headers = null, user = null, password = null) {
-        let xhr = new XMLHttpRequest();
-        xhr.open(method, url, true, user, password);
-        if(headers) {
-            headers.forEach(function(header) {
-                xhr.setRequestHeader(header.name, header.value);
-            }, this);
-        }
-        xhr.onreadystatechange = () => {
-            if(xhr.readyState === XMLHttpRequest.DONE) {
-                //TODO: check xhr for info on what was returned.
-                onFetchResponse();
-            }
-        }
-        xhr.send();
-
-    }
-
     handleRoute(state, isPrevAction = false) {
 
         if (state.route.postRouteProcessing) {
@@ -168,15 +150,38 @@ export class SimpleRouter {
         }
 
     }
-
-    fetch(state) {
-        //Fetch!
-        if (state.route.postFetchContent) {
-            state.route.postFetchContent(state);
+    
+    fetch(state, method = "GET", headers = null, user = null, password = null) {
+        var xhr = new XMLHttpRequest();
+        xhr.open(method, state.route.content.html.url, true, user, password);
+        xhr.onerror = this.handleFetchFailure;
+        if(headers) {
+            headers.forEach(function(header) {
+                xhr.setRequestHeader(header.name, header.value);
+            }, this);
         }
+        xhr.onreadystatechange = () => {
+            if(xhr.readyState === XMLHttpRequest.DONE) {
+                //TODO: check xhr for info on what was returned.
+                state.route.content.html.template = xhr.responseText;
+                state.route.content.html.loaded = true;
+                state.templateTextInstance = xhr.responseText;
+                this.postFetch(state);
+            }
+        }
+        xhr.send();
+
+    }
+
+    handleFetchFailure(evt) {
+        throw evt;
     }
 
     postFetch(state) {
+        if (state.route.postFetchContent) {
+            state.route.postFetchContent(state);
+        }
+
         if(this.shouldLoad(state)) {
             if (state.route.preContentLoad) {
                 state.route.preContentLoad(state);
@@ -259,7 +264,7 @@ export class SimpleRouter {
     shouldFetch(state) {
         let shouldFetch = false;
         const content = state.route.content;
-        if (!!content.html && !!content.html.url) {
+        if (!!content.html && !!content.html.url && !content.html.loaded) {
             shouldFetch = true;
         }
         return shouldFetch;
@@ -268,7 +273,6 @@ export class SimpleRouter {
     shouldLoad (state) {
         let shouldLoad = false;
         const content = state.route.content;
-        console.log(!!state.templateTextInstance);
         if (!!state.templateTextInstance) {
             shouldLoad = true;
         }
