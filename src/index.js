@@ -22,9 +22,15 @@ export class SimpleRouter {
             handler: () => {}
         }, '');
 
+        window.onhashchange = this.onHashChange;
+
         this.findOutlets();
         this.findLinks();
 
+    }
+
+    onHashChange(event) {
+        
     }
 
     findOutlets(selector = 'router-outlet', baseElement = document) {
@@ -35,6 +41,15 @@ export class SimpleRouter {
                 this._outlets.push(new Outlet(element, this.getAttributeValueByName(element, selector)));
             }
         }, this);
+        if (!!!this.getMainOutlet()) {
+            throw "A main outlet is required."
+        }
+    }
+
+    getMainOutlet() {
+        return this._outlets.filter((item) => {
+            return item.isMain === true;
+        });
     }
 
     clearDeadOutlets() {
@@ -59,7 +74,8 @@ export class SimpleRouter {
         this.clearDeadLinks();
         baseElement.querySelectorAll(`[${selector}]`).forEach((element) => {
             if (!element.isRegistered) {
-                this._links.push(new Link(element, this.findOutletByName(this.getAttributeValueByName(element, 'route-target')), this.handleLinkClick.bind(this)));
+                let targetOutlet = this.findOutletByName(this.getAttributeValueByName(element, 'route-target')) || this.getMainOutlet();
+                this._links.push(new Link(element, targetOutlet, this.handleLinkClick.bind(this)));
             }
         }, this);
     }

@@ -17,3 +17,4 @@ The aim here is to have a simple pure JS UI router for applications where a full
 ### TODO List
 * Handle back navigation.
 * Handle fetching remote html templates.
+* Somehow see if we can encapsulate the JS  for a route into a self contained object attached to the route?

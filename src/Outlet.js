@@ -2,6 +2,7 @@ export class Outlet {
     constructor (element, name) {
         this.element = element;
         this.name = name;
+        this.isMain = name === "main";
     }
 
     hasContent () {
