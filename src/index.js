@@ -229,6 +229,7 @@ export class SimpleRouter {
                 state.route.content.js.loaded = true;
                 this.postLoad(state);
             };
+            head.appendChild(js);
         }
 
         if (!needToWait) {
@@ -293,10 +294,10 @@ export class SimpleRouter {
 
     registerRoute(...args) {
         if (typeof args[0] === 'function') {
-            this._defaultRoute.events = new Route('/', args[0], args[1])
+            this._defaultRoute.events = new Route('/', args[0], args[1], args[2], args[3])
         } else if (typeof args[0] === 'string') {
             this._routes.push(
-                new Route(args[0], args[1], args[2])
+                new Route(args[0], args[1], args[2], args[3], args[4])
             );
         }
     }

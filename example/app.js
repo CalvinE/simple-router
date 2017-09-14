@@ -3,8 +3,9 @@ let router = new SimpleRouter();
 router.registerRoute('/home', {
     handler: (state) => {
         console.log('Hello from handler!');
+        addHRToContainer();
     }
-}, './template.html');
+}, './template.html', './template.css', './template.js');
 
 router.registerRoute('/home/:id', {
     preContentLoad: (state) => {
