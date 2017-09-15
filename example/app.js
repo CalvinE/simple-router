@@ -1,5 +1,13 @@
 let router = new SimpleRouter();
 
+router.registerRoute({
+
+}, '<p>This is the default route!</p>');
+
+router.registerRoute(null, {
+
+}, '<p>The route you are looking for is not registered.</p>');
+
 router.registerRoute('/home', {
     handler: (state) => {
         console.log('Hello from handler!');
@@ -20,3 +28,5 @@ router.registerRoute('/about', {
 router.registerRoute('/contactus', {
 
 }, '<p>This was injected by the router! contact us</p>');
+
+router.init();

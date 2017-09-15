@@ -4,6 +4,7 @@ export class Link {
         this.url = this.element.attributes.getNamedItem('route-url').value;
         this.outlet = outlet;
         this.element.onclick = clickHandler;
+        // this.element.href += this.url;
         this.element.isRegistered = true;
         // let link = ele.attributes.getNamedItem(this._config.linkAttrName).value;
         // let targetName = ele.attributes.getNamedItem(this._config.outletTargetAttrName).value;

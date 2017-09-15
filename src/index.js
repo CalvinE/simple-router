@@ -15,22 +15,41 @@ export class SimpleRouter {
         this._onCssLoaded = null;
         this._onJsLoaded = null;
         this._current = null;
-        this._defaultRoute = new Route('/', {
-            handler: () => {}
-        }, null);
-        this._notFoundRoute = new Route(null, {
-            handler: () => {}
-        }, '');
-
-        window.onhashchange = this.onHashChange;
-
+        this._ignoreHashChange = false;
+        this._defaultRoute = null;
+        // new Route('/', {
+        //     handler: () => {}
+        // }, '<p>This is the default route!</p>');
+        this._notFoundRoute = null;
+        // new Route(null, {
+        //     handler: () => {}
+        // }, '<p>The route you were looking for is unavailable...</p>');
+        window.onhashchange = this.onHashChange.bind(this);
         this.findOutlets();
         this.findLinks();
 
+        this._mainOutlet = this.getMainOutlet();        
+
+    }
+
+    init () {
+        if (window.location.hash.length === 0) {
+            window.location.hash = '/'; // Route to the default route
+        } else {
+            this.onHashChange(); // Route to whatever is in the url
+        }
     }
 
     onHashChange(event) {
-        
+        if(!this._ignoreHashChange) {
+            let link = {
+                url: window.location.hash.substring(1),
+                outlet: this._mainOutlet
+            }
+            this.initRouteHandling(link);
+        } else {
+            this._ignoreHashChange = false;
+        }
     }
 
     findOutlets(selector = 'router-outlet', baseElement = document) {
@@ -47,7 +66,7 @@ export class SimpleRouter {
     }
 
     getMainOutlet() {
-        return this._outlets.filter((item) => {
+        return this._outlets.find((item) => {
             return item.isMain === true;
         });
     }
@@ -97,27 +116,31 @@ export class SimpleRouter {
         const linkParts = link.url.split('/');
         let params = null;
 
-        specifiedRoute = this._routes.find((route) => {
-            const routeLinkParts = route.routeUrl.split('/');
-            let doesItMatch = true;
-            if (routeLinkParts.length === linkParts.length) { // Does the incomming link have the same number of parts as the route link being examined.
-                params = {};
-                for (let i = 0; i < routeLinkParts.length; i++) {
-                    if (linkParts[i] === routeLinkParts[i]) {
-                        console.log('these parts match!')
-                    } else if (routeLinkParts[i].startsWith(':') === true) { // This would be a route parameter. // TODO make optional params?
-                        params[routeLinkParts[i].substring(1)] = linkParts[i];
-                    } else {
-                        console.log('no route matches!');
-                        doesItMatch = false;
-                        break;
+        if (link.url === '/') {
+            specifiedRoute = this._defaultRoute;
+        } else {
+            specifiedRoute = this._routes.find((route) => {
+                const routeLinkParts = route.routeUrl.split('/');
+                let doesItMatch = true;
+                if (routeLinkParts.length === linkParts.length) { // Does the incomming link have the same number of parts as the route link being examined.
+                    params = {};
+                    for (let i = 0; i < routeLinkParts.length; i++) {
+                        if (linkParts[i] === routeLinkParts[i]) {
+                            console.log('these parts match!')
+                        } else if (routeLinkParts[i].startsWith(':') === true) { // This would be a route parameter. // TODO make optional params?
+                            params[routeLinkParts[i].substring(1)] = linkParts[i];
+                        } else {
+                            console.log('no route matches!');
+                            doesItMatch = false;
+                            break;
+                        }
                     }
+                } else {
+                    doesItMatch = false;
                 }
-            } else {
-                doesItMatch = false;
-            }
-            return doesItMatch;
-        }, this);
+                return doesItMatch;
+            }, this);
+        }
 
         if (!specifiedRoute) {
             specifiedRoute = this._notFoundRoute;
@@ -133,18 +156,24 @@ export class SimpleRouter {
     }
 
     handleLinkClick(event) {
+        event.preventDefault();
         let ele = event.target;
         let link = this._links.find((possibleLink) => {
             return ele === possibleLink.element;
         });
+        this._ignoreHashChange = true;
+        window.location.hash = link.url;
+        this.initRouteHandling(link);
+    }
+
+    initRouteHandling (link) {
         const selectedRoute = this.findRoute(link);
         const state = {
             link: link,
             route: selectedRoute.route,
             params: selectedRoute.params
         }
-        console.log(state);
-        this.handleRoute(state); // TODO: add callback for post processing
+        this.handleRoute(state);
     }
 
     handleRoute(state, isPrevAction = false) {
@@ -208,9 +237,7 @@ export class SimpleRouter {
             
         } else {
             this.postLoad(state);
-        }
-
-        
+        }        
     }
 
     load(state) {
@@ -309,17 +336,22 @@ export class SimpleRouter {
     }
 
     registerRoute(...args) {
-        if (typeof args[0] === 'function') {
-            this._defaultRoute.events = new Route('/', args[0], args[1], args[2], args[3])
+        if (typeof args[0] === 'object' && args[0] !== null) {
+            console.log('registereing default route');
+            this._defaultRoute = new Route('/', args[0], args[1], args[2], args[3])
         } else if (typeof args[0] === 'string') {
+            console.log(args);
             this._routes.push(
                 new Route(args[0], args[1], args[2], args[3], args[4])
             );
+        } else if (args[0] === null) {
+            console.log('registereing not found route');
+            this._notFoundRoute = new Route(args[0], args[1], args[2], args[3], args[4])
         }
     }
 
     unregisterRoute(routeUrl) {
-        if (this._defaultRoute.url == routeLink) {
+        if (this._defaultRoute.url == routeUrl) {
             this._defaultRoute.events = null;
         } // TODO: Remove routes from array
     }
