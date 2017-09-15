@@ -9,12 +9,12 @@ export class SimpleRouter {
         this._links = [];
         this._outlets = [];
         this._routes = [];
-        this._routerState = [];
-        this._cssLoaded = false;
-        this._jsLoaded = false;
-        this._onCssLoaded = null;
-        this._onJsLoaded = null;
-        this._current = null;
+        // this._routerState = [];
+        // this._cssLoaded = false;
+        // this._jsLoaded = false;
+        // this._onCssLoaded = null;
+        // this._onJsLoaded = null;
+        // this._current = null;
         this._ignoreHashChange = false;
         this._defaultRoute = null;
         // new Route('/', {
@@ -161,8 +161,10 @@ export class SimpleRouter {
         let link = this._links.find((possibleLink) => {
             return ele === possibleLink.element;
         });
-        this._ignoreHashChange = true;
-        window.location.hash = link.url;
+        if(link.outlet === this._mainOutlet){
+            this._ignoreHashChange = true;
+            window.location.hash = link.url;
+        }
         this.initRouteHandling(link);
     }
 
@@ -291,11 +293,12 @@ export class SimpleRouter {
                 state.route.handler(state);
             }
 
-            if(!!this._current) {
-                this._routerState.push(this._currnet);
-            }
+            // if(!!this._current) {
+            //     this._routerState.push(this._current);
+            // }
             
-            this._current = state;
+            // this._current = state;
+            // console.log(this._routerState, this._current);
 
             if (state.route.postLinkHandler) {
                 state.route.postLinkHandler(state);
@@ -337,15 +340,12 @@ export class SimpleRouter {
 
     registerRoute(...args) {
         if (typeof args[0] === 'object' && args[0] !== null) {
-            console.log('registereing default route');
             this._defaultRoute = new Route('/', args[0], args[1], args[2], args[3])
         } else if (typeof args[0] === 'string') {
-            console.log(args);
             this._routes.push(
                 new Route(args[0], args[1], args[2], args[3], args[4])
             );
         } else if (args[0] === null) {
-            console.log('registereing not found route');
             this._notFoundRoute = new Route(args[0], args[1], args[2], args[3], args[4])
         }
     }
