@@ -1,5 +1,5 @@
 {
-  "name": "simple-router",
+  "name": "simple-ui-router",
   "version": "1.0.0",
   "description": "A simple Javascript UI router.",
   "main": "build/simpleRouter.js",
@@ -20,9 +20,9 @@
   "author": "Calvin L Echols",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/CalvinE/simple-router/issues"
+    "url": "https://github.com/CalvinE/simple-ui-router/issues"
   },
-  "homepage": "https://github.com/CalvinE/simple-router#readme",
+  "homepage": "https://github.com/CalvinE/simple-ui-router#readme",
   "dependencies": {},
   "devDependencies": {
     "babel-core": "^6.26.0",
