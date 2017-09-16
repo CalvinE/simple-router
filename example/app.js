@@ -1,4 +1,4 @@
-let router = simpleRouter;
+let router = simpleUIRouter;
 
 router.registerRoute({
 

@@ -4,7 +4,7 @@ module.exports = {
 	entry: './src/index.js',
 	output: {
 		path: path.resolve(__dirname, 'build'),
-		filename: 'simple-router.js',
+		filename: 'simple-ui-router.js',
 		// library: 'simpleRouter',
 		libraryTarget: 'umd'
 	},

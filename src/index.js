@@ -2,7 +2,7 @@ import { Link } from './Link';
 import { Route } from './Route';
 import { Outlet } from './Outlet';
 // TODO: Add default routes to outlets as an option. 
-class SimpleRouter {
+class SimpleUIRouter {
 	constructor (config) {
 		this._config = null;
 		this._links = [];
@@ -345,4 +345,4 @@ class SimpleRouter {
 	}
 }
 
-export const simpleRouter = new SimpleRouter();
+export const simpleUIRouter = new SimpleUIRouter();
