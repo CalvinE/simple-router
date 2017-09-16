@@ -13,7 +13,7 @@ router.registerRoute('/home', {
 		console.log('Hello from handler!');
 		addHRToContainer();
 	}
-}, './template.html', './template.css', './template.js');
+}, './template.html', ['./template.css', './template2.css'], './template.js');
 
 router.registerRoute('/home/:id', {
 	preContentLoad: (state) => {
@@ -28,5 +28,17 @@ router.registerRoute('/about', {
 router.registerRoute('/contactus', {
 
 }, '<p>This was injected by the router! contact us</p>');
+
+router.registerRoute('/log', {
+	handler: (state) => {
+		console.log('/log route hit!');
+	}
+});
+
+router.registerRoute('/redirect', {
+	postRoutingHandler: (state) => {
+		window.location.hash = '/home/456';
+	}
+});
 
 router.init();

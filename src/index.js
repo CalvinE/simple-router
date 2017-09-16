@@ -9,6 +9,8 @@ class SimpleUIRouter {
 		this._outlets = [];
 		this._routes = [];
 		this._mainOutlet = null;
+		this._loadedURLs = [];
+		this._isRouting = false;
 		// this._routerState = [];
 		// this._current = null;
 		this._ignoreHashChange = false;
@@ -159,6 +161,7 @@ class SimpleUIRouter {
 	}
 
 	initRouteHandling (link) {
+		this._isRouting = true;
 		const selectedRoute = this.findRoute(link);
 		const state = {
 			link: link,
@@ -180,14 +183,16 @@ class SimpleUIRouter {
 
 			this.fetch(state);
 		} else {
-			state.templateTextInstance = state.route.content.html.template;
+			if (state.route.content.html && state.route.content.html[0].loaded === true) {
+				state.templateTextInstance = state.route.content.html[0].template;
+			}
 			this.postFetch(state);
 		}
 	}
 
 	fetch (state, method = 'GET', headers = null, user = null, password = null) {
 		var xhr = new window.XMLHttpRequest();
-		xhr.open(method, state.route.content.html.url, true, user, password);
+		xhr.open(method, state.route.content.html[0].url, true, user, password);
 		xhr.onerror = this.handleFetchFailure;
 		if (headers) {
 			headers.forEach(function (header) {
@@ -197,8 +202,8 @@ class SimpleUIRouter {
 		xhr.onreadystatechange = () => {
 			if (xhr.readyState === window.XMLHttpRequest.DONE) {
 				// TODO: check xhr for info on what was returned.
-				state.route.content.html.template = xhr.responseText;
-				state.route.content.html.loaded = true;
+				state.route.content.html[0].template = xhr.responseText;
+				state.route.content.html[0].loaded = true;
 				state.templateTextInstance = xhr.responseText;
 				this.postFetch(state);
 			}
@@ -215,11 +220,17 @@ class SimpleUIRouter {
 			state.route.postFetchContent(state);
 		}
 
-		if (this.shouldLoad(state)) {
-			if (state.route.preContentLoad) {
-				state.route.preContentLoad(state);
-			}
+		// Load html template here
 
+		if (state.route.preContentLoad) {
+			state.route.preContentLoad(state);
+		}
+
+		if (!!state.templateTextInstance) {
+			state.link.outlet.addContentString(state.templateTextInstance);
+		}
+
+		if (this.shouldLoad(state)) {
 			this.load(state);
 		} else {
 			this.postLoad(state);
@@ -229,36 +240,45 @@ class SimpleUIRouter {
 	load (state) {
 		let head = document.getElementsByTagName('head')[0];
 		let needToWait = false;
-		if (!!state.templateTextInstance) {
-			state.link.outlet.addContentString(state.templateTextInstance);
-		}
 
 		const content = state.route.content;
 
-		if (!!content.css && !content.css.loaded) { // Right now we only support css loading via URL.
+		if (!state.route.isLoaded('css')) { // Right now we only support css loading via URL.
 			needToWait = true;
-			let link = document.createElement('link');
-			link.rel = 'stylesheet';
-			link.type = 'text/css';
-			link.href = content.css.url;
-			link.media = 'all';
-			link.onload = () => {
-				state.route.content.css.loaded = true;
-				this.postLoad(state);
-			};
-			head.appendChild(link);
+			for (let i = 0; i < content.css.length; i++) {
+				if (content.css[i].loaded === false && this._loadedURLs.indexOf(content.css[i].url) === -1) {
+					let link = document.createElement('link');
+					link.rel = 'stylesheet';
+					link.type = 'text/css';
+					link.href = content.css[i].url;
+					link.srindex = i;
+					link.media = 'all';
+					link.onload = () => {
+						state.route.content.css[link.srindex].loaded = true;
+						this._loadedURLs.push(state.route.content.css[link.srindex].url);
+						this.postLoad(state);
+					};
+					head.appendChild(link);
+				}
+			}
 		}
 
-		if (!!content.js && !content.js.loaded) { // Right now we only support js loading via URL.
+		if (!state.route.isLoaded('js')) { // Right now we only support js loading via URL.
 			needToWait = true;
-			let js = document.createElement('script');
-			js.type = 'application/javascript';
-			js.src = content.js.url;
-			js.onload = () => {
-				state.route.content.js.loaded = true;
-				this.postLoad(state);
-			};
-			head.appendChild(js);
+			for (let i = 0; i < content.js.length; i++) {
+				if (content.js[i].loaded === false && this._loadedURLs.indexOf(content.js[i].url) === -1) {
+					let script = document.createElement('script');
+					script.type = 'application/javascript';
+					script.src = content.js[i].url;
+					script.srindex = i;
+					script.onload = () => {
+						state.route.content.js[script.srindex].loaded = true;
+						this._loadedURLs.push(state.route.content.js[script.srindex].url);
+						this.postLoad(state);
+					};
+					head.appendChild(script);
+				}
+			}
 		}
 
 		if (!needToWait) {
@@ -266,9 +286,20 @@ class SimpleUIRouter {
 		}
 	}
 
+	isRouteContentLoaded (state) {
+		var isLoaded = false;
+		isLoaded = (state.route.isLoaded('html')) && (state.route.isLoaded('css')) && (state.route.isLoaded('js'));
+		console.log(`${state.route.isLoaded('html')} && ${(state.route.isLoaded('css'))} && ${(state.route.isLoaded('js'))}`);
+		return isLoaded;
+	}
+
+	isNotLoaded (item) {
+		return item.loaded === false;
+	}
+
 	postLoad (state) {
-		const content = state.route.content;
-		if ((!content.html || content.html.loaded) && (!content.css || content.css.loaded) && (!content.js || content.js.loaded)) {
+		if (this.isRouteContentLoaded(state) === true) {
+			console.log('All content loaded!');
 			if (state.route.postContentLoad) {
 				state.route.postContentLoad(state);
 			}
@@ -284,8 +315,10 @@ class SimpleUIRouter {
 			// this._current = state;
 			// console.log(this._routerState, this._current);
 
-			if (state.route.postLinkHandler) {
-				state.route.postLinkHandler(state);
+			this._isRouting = false;
+
+			if (state.route.postRoutingHandler) {
+				state.route.postRoutingHandler(state);
 			}
 		} else {
 			console.log('Still waiting');
@@ -294,8 +327,7 @@ class SimpleUIRouter {
 
 	shouldFetch (state) {
 		let shouldFetch = false;
-		const content = state.route.content;
-		if (!!content.html && !!content.html.url && !content.html.loaded) {
+		if (state.route.isLoaded('html') === false) {
 			shouldFetch = true;
 		}
 		return shouldFetch;
@@ -303,14 +335,13 @@ class SimpleUIRouter {
 
 	shouldLoad (state) {
 		let shouldLoad = false;
-		const content = state.route.content;
 		if (!!state.templateTextInstance) {
 			shouldLoad = true;
 		}
-		if (!shouldLoad && !!content.css && !!content.css.url) {
+		if (state.route.isLoaded('css') === false) {
 			shouldLoad = true;
 		}
-		if (!shouldLoad && !!content.js && !!content.js.url) {
+		if (state.route.isLoaded('js') === false) {
 			shouldLoad = true;
 		}
 		return shouldLoad;
@@ -341,7 +372,8 @@ class SimpleUIRouter {
 	}
 
 	getAttributeValueByName (element, attrName) {
-		return element.attributes.getNamedItem(attrName).value;
+		let attr = element.attributes.getNamedItem(attrName);
+		return attr ? attr.value : null;
 	}
 }
 

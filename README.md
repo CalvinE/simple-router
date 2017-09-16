@@ -15,7 +15,4 @@ The aim here is to have a simple pure JS UI router for applications where a full
 * TODO
 
 ### TODO List
-* Handle back navigation.
-* Handle fetching remote html templates.
 * Somehow see if we can encapsulate the JS for a route into a self contained object attached to the route?
-* Add checking for JS and CSS urls so that if multiple routes happen to use the same file for some reason then we dont load them again.

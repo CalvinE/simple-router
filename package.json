@@ -1,8 +1,8 @@
 {
   "name": "simple-ui-router",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A simple Javascript UI router.",
-  "main": "build/simpleRouter.js",
+  "main": "build/simple-ui-router.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack -w -p",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CalvinE/simple-router.git"
+    "url": "git+https://github.com/CalvinE/simple-ui-router.git"
   },
   "keywords": [
     "js",
