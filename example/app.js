@@ -1,4 +1,4 @@
-let router = new SimpleRouter();
+let router = simpleRouter;
 
 router.registerRoute({
 
@@ -9,16 +9,16 @@ router.registerRoute(null, {
 }, '<p>The route you are looking for is not registered.</p>');
 
 router.registerRoute('/home', {
-    handler: (state) => {
-        console.log('Hello from handler!');
-        addHRToContainer();
-    }
+	handler: (state) => {
+		console.log('Hello from handler!');
+		addHRToContainer();
+	}
 }, './template.html', './template.css', './template.js');
 
 router.registerRoute('/home/:id', {
-    preContentLoad: (state) => {
-        state.templateTextInstance = state.templateTextInstance.replace('!!replaceme!!', state.params.id);
-    }
+	preContentLoad: (state) => {
+		state.templateTextInstance = state.templateTextInstance.replace('!!replaceme!!', state.params.id);
+	}
 }, '<p>This was injected by the router! home with param !!replaceme!!</p>');
 
 router.registerRoute('/about', {

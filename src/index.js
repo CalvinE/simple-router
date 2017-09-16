@@ -2,25 +2,27 @@ import { Link } from './Link';
 import { Route } from './Route';
 import { Outlet } from './Outlet';
 // TODO: Add default routes to outlets as an option. 
-export class SimpleRouter {
+class SimpleRouter {
 	constructor (config) {
-		this._config = config;
+		this._config = null;
 		this._links = [];
 		this._outlets = [];
 		this._routes = [];
+		this._mainOutlet = null;
 		// this._routerState = [];
 		// this._current = null;
 		this._ignoreHashChange = false;
 		this._defaultRoute = null;
 		this._notFoundRoute = null;
 		window.onhashchange = this.onHashChange.bind(this);
-		this.findOutlets();
-		this.findLinks();
-
-		this._mainOutlet = this.getMainOutlet();
 	}
 
-	init () {
+	init (config) {
+		this._config = config;
+		this.findOutlets();
+		this.findLinks();
+		this._mainOutlet = this.getMainOutlet();
+
 		if (window.location.hash.length === 0) {
 			// window.location.hash = '/'; // Route to the default route
 			this.onHashChange('/');
@@ -116,11 +118,9 @@ export class SimpleRouter {
 					params = {};
 					for (let i = 0; i < routeLinkParts.length; i++) {
 						if (linkParts[i] === routeLinkParts[i]) {
-							console.log('these parts match!');
 						} else if (routeLinkParts[i].startsWith(':') === true) { // This would be a route parameter. // TODO make optional params?
 							params[routeLinkParts[i].substring(1)] = linkParts[i];
 						} else {
-							console.log('no route matches!');
 							doesItMatch = false;
 							break;
 						}
@@ -344,3 +344,5 @@ export class SimpleRouter {
 		return element.attributes.getNamedItem(attrName).value;
 	}
 }
+
+export const simpleRouter = new SimpleRouter();
