@@ -315,6 +315,10 @@ class SimpleUIRouter {
 			// this._current = state;
 			// console.log(this._routerState, this._current);
 
+			this.findOutlets();
+			this.findLinks();
+			this._mainOutlet = this.getMainOutlet();
+
 			this._isRouting = false;
 
 			if (state.route.postRoutingHandler) {
