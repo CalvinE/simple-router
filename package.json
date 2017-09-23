@@ -1,6 +1,6 @@
 {
   "name": "simple-ui-router",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A simple Javascript UI router.",
   "main": "build/simple-ui-router.js",
   "scripts": {
@@ -34,6 +34,7 @@
     "eslint-plugin-node": "^5.1.1",
     "eslint-plugin-promise": "^3.5.0",
     "eslint-plugin-standard": "^3.0.1",
+    "http-server": "^0.10.0",
     "webpack": "^3.5.5"
   }
 }

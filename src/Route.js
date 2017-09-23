@@ -12,13 +12,14 @@ export class Route {
 	constructor (routeUrl, events, template = null, styleData = null, scriptData = null) {
 		this.routeUrl = routeUrl;
 
-		this.postRouteProcessing = events.postRouteProcessing;
-		this.preFetchContent = events.preFetchContent;
-		this.postFetchContent = events.postFetchContent;
+		this.onPostRouteProcessing = events.onPostRouteProcessing;
+		this.onPreFetchContent = events.onPreFetchContent;
+		this.onPostFetchContent = events.onPostFetchContent;
 		this.handler = events.handler;
-		this.preContentLoad = events.preContentLoad;
-		this.postContentLoad = events.postContentLoad;
-		this.postRoutingHandler = events.postRoutingHandler;
+		this.onPreContentLoad = events.onPreContentLoad;
+		this.onPostContentLoad = events.onPostContentLoad;
+		this.onPostRoutingHandler = events.onPostRoutingHandler;
+		this.onUnloadState = events.onUnloadState;
 
 		let htmlSection = null;
 		let cssSection = null;

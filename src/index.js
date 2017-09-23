@@ -11,6 +11,7 @@ class SimpleUIRouter {
 		this._mainOutlet = null;
 		this._loadedURLs = [];
 		this._isRouting = false;
+		// this._currentState = null;
 		// this._routerState = [];
 		// this._current = null;
 		this._ignoreHashChange = false;
@@ -40,7 +41,7 @@ class SimpleUIRouter {
 				url: hash,
 				outlet: this._mainOutlet
 			};
-			this.initRouteHandling(link);
+			this.initRouteHandling(link, this._mainOutlet);
 		} else {
 			this._ignoreHashChange = false;
 		}
@@ -153,32 +154,38 @@ class SimpleUIRouter {
 		let link = this._links.find((possibleLink) => {
 			return ele === possibleLink.element;
 		});
-		if (link.outlet === this._mainOutlet) {
+		let outlet = link.outlet ? link.outlet : this._mainOutlet;
+		if (outlet === this._mainOutlet) {
 			this._ignoreHashChange = true;
 			window.location.hash = link.url;
 		}
-		this.initRouteHandling(link);
+		this.initRouteHandling(link, outlet);
 	}
 
-	initRouteHandling (link) {
+	initRouteHandling (link, outlet) {
 		this._isRouting = true;
 		const selectedRoute = this.findRoute(link);
 		const state = {
 			link: link,
+			outlet: outlet,
 			route: selectedRoute.route,
 			params: selectedRoute.params
 		};
+		console.log('check this!', state, (!!state.outlet.currentState), (state.route.content.html !== null), (!!state.outlet.currentState && !!state.outlet.currentState.route.onUnloadState));
+		if (!!state.outlet.currentState && state.route.content.html !== null && state.outlet.currentState.route.onUnloadState) {
+			outlet.currentState.route.onUnloadState(outlet.currentState);
+		}
 		this.handleRoute(state);
 	}
 
 	handleRoute (state, isPrevAction = false) {
-		if (state.route.postRouteProcessing) {
-			state.route.postRouteProcessing(state);
+		if (state.route.onPostRouteProcessing) {
+			state.route.onPostRouteProcessing(state);
 		}
 
 		if (this.shouldFetch(state) === true) {
-			if (state.route.preFetchContent) {
-				state.route.preFetchContent(state);
+			if (state.route.onPreFetchContent) {
+				state.route.onPreFetchContent(state);
 			}
 
 			this.fetch(state);
@@ -205,6 +212,10 @@ class SimpleUIRouter {
 				state.route.content.html[0].template = xhr.responseText;
 				state.route.content.html[0].loaded = true;
 				state.templateTextInstance = xhr.responseText;
+
+				if (state.route.onPostFetchContent) {
+					state.route.onPostFetchContent(state);
+				}
 				this.postFetch(state);
 			}
 		};
@@ -216,31 +227,30 @@ class SimpleUIRouter {
 	}
 
 	postFetch (state) {
-		if (state.route.postFetchContent) {
-			state.route.postFetchContent(state);
-		}
-
-		// Load html template here
-
-		if (state.route.preContentLoad) {
-			state.route.preContentLoad(state);
-		}
-
-		if (!!state.templateTextInstance) {
-			state.link.outlet.addContentString(state.templateTextInstance);
-		}
-
 		if (this.shouldLoad(state)) {
+			if (state.route.onPreContentLoad) {
+				state.route.onPreContentLoad(state);
+			}
+
+			this.loadTemplate(state);
 			this.load(state);
 		} else {
+			this.loadTemplate(state);
 			this.postLoad(state);
+		}
+	}
+
+	loadTemplate (state) {
+		if (!!state.templateTextInstance) {
+			state.tempalteLoaded = true;
+			state.outlet.addContentString(state.templateTextInstance);
 		}
 	}
 
 	load (state) {
 		let head = document.getElementsByTagName('head')[0];
 		let needToWait = false;
-
+		state.didLoad = true;
 		const content = state.route.content;
 
 		if (!state.route.isLoaded('css')) { // Right now we only support css loading via URL.
@@ -289,7 +299,7 @@ class SimpleUIRouter {
 	isRouteContentLoaded (state) {
 		var isLoaded = false;
 		isLoaded = (state.route.isLoaded('html')) && (state.route.isLoaded('css')) && (state.route.isLoaded('js'));
-		console.log(`${state.route.isLoaded('html')} && ${(state.route.isLoaded('css'))} && ${(state.route.isLoaded('js'))}`);
+		// console.log(`${state.route.isLoaded('html')} && ${(state.route.isLoaded('css'))} && ${(state.route.isLoaded('js'))}`);
 		return isLoaded;
 	}
 
@@ -299,9 +309,9 @@ class SimpleUIRouter {
 
 	postLoad (state) {
 		if (this.isRouteContentLoaded(state) === true) {
-			console.log('All content loaded!');
-			if (state.route.postContentLoad) {
-				state.route.postContentLoad(state);
+			// console.log('All content loaded!');
+			if (state.didLoad === true && state.route.onPostContentLoad) {
+				state.route.onPostContentLoad(state);
 			}
 
 			if (state.route.handler) {
@@ -321,11 +331,15 @@ class SimpleUIRouter {
 
 			this._isRouting = false;
 
-			if (state.route.postRoutingHandler) {
-				state.route.postRoutingHandler(state);
+			if (state.route.content.html !== null) {
+				state.outlet.currentState = state;
+			}
+
+			if (state.route.onPostRoutingHandler) {
+				state.route.onPostRoutingHandler(state);
 			}
 		} else {
-			console.log('Still waiting');
+			// console.log('Still waiting');
 		}
 	}
 
@@ -353,7 +367,7 @@ class SimpleUIRouter {
 
 	handleLifeCycleFailure (data) {
 		// TODO: add on failure callback for route, and potentially check if data passed into here is error based on properties available.
-		console.error('A failure occurred in lifecycle chain!', typeof data, data);
+		// console.error('A failure occurred in lifecycle chain!', typeof data, data);
 		// return Promise.reject(data);
 	}
 

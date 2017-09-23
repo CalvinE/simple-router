@@ -3,6 +3,7 @@ export class Outlet {
 		this.element = element;
 		this.name = name;
 		this.isMain = name === 'main';
+		this.currentState = null;
 	}
 
 	hasContent () {

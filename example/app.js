@@ -12,11 +12,14 @@ router.registerRoute('/home', {
 	handler: (state) => {
 		console.log('Hello from handler!');
 		addHRToContainer();
+	},
+	onUnloadState: (state) => {
+		console.log('onUnloadState called!', state);
 	}
 }, './template.html', ['./template.css', './template2.css'], './template.js');
 
 router.registerRoute('/home/:id', {
-	preContentLoad: (state) => {
+	onPreContentLoad: (state) => {
 		state.templateTextInstance = state.templateTextInstance.replace('!!replaceme!!', state.params.id);
 	}
 }, '<p>This was injected by the router! home with param !!replaceme!!</p>');
@@ -36,7 +39,7 @@ router.registerRoute('/log', {
 });
 
 router.registerRoute('/redirect', {
-	postRoutingHandler: (state) => {
+	onPostRoutingHandler: (state) => {
 		window.location.hash = '/home/456';
 	}
 });
