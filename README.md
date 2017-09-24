@@ -1,4 +1,4 @@
-# simple-router
+# simple-ui-router
 A simple javascript UI router
 
 ## Goals

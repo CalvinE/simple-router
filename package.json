@@ -1,6 +1,6 @@
 {
   "name": "simple-ui-router",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A simple Javascript UI router.",
   "main": "build/simple-ui-router.js",
   "scripts": {

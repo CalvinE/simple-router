@@ -171,7 +171,7 @@ class SimpleUIRouter {
 			route: selectedRoute.route,
 			params: selectedRoute.params
 		};
-		console.log('check this!', state, (!!state.outlet.currentState), (state.route.content.html !== null), (!!state.outlet.currentState && !!state.outlet.currentState.route.onUnloadState));
+		// console.log('check this!', state, (!!state.outlet.currentState), (state.route.content.html !== null), (!!state.outlet.currentState && !!state.outlet.currentState.route.onUnloadState));
 		if (!!state.outlet.currentState && state.route.content.html !== null && state.outlet.currentState.route.onUnloadState) {
 			outlet.currentState.route.onUnloadState(outlet.currentState);
 		}
