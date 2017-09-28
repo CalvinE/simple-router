@@ -28,7 +28,7 @@ class SimpleUIRouter {
 
 		if (window.location.hash.length === 0) {
 			// window.location.hash = '/'; // Route to the default route
-			this.onHashChange('/');
+			this.onHashChange(this._mainOutlet._defaultRoute || '/');
 		} else {
 			this.onHashChange(); // Route to whatever is in the url
 		}
@@ -52,7 +52,12 @@ class SimpleUIRouter {
 		baseElement.querySelectorAll(`[${selector}]`).forEach((element, index, array) => {
 			if (!element.isRegistered) {
 				element.isRegistered = true;
-				this._outlets.push(new Outlet(element, this.getAttributeValueByName(element, selector)));
+				let defaultRoute = this.getAttributeValueByName(element, 'default-route') || null;
+				let outlet = new Outlet(element, this.getAttributeValueByName(element, selector));
+				this._outlets.push(outlet);
+				if (!!defaultRoute && outlet.isMain === false) {
+					// TODO: route outlet to default route.
+				}
 			}
 		}, this);
 		if (!!!this.getMainOutlet()) {
@@ -72,9 +77,17 @@ class SimpleUIRouter {
 			if (stillExists === false) {
 				outlet.element.isRegistered = false;
 				outlet.element = null;
+				if (this.shouldUnloadState(outlet.currentState, null)) {
+					outlet.currentState.route.onUnloadState(outlet.currentState);
+					outlet.currentState.isUnloaded = true;
+				}
 			}
 			return stillExists;
 		});
+	}
+
+	shouldUnloadState (state, incomingHTMLContent = null) {
+		return !!state && (!!incomingHTMLContent) && state.route.onUnloadState && state.isUnloaded === false;
 	}
 
 	findOutletByName (name) {
@@ -170,11 +183,13 @@ class SimpleUIRouter {
 			outlet: outlet,
 			route: selectedRoute.route,
 			params: selectedRoute.params,
-			routeContent: selectedRoute.route.cloneContent() // We are cloneing it here so that it can be
+			routeContent: selectedRoute.route.cloneContent(), // We are cloneing it here so that it can be
+			isUnloaded: false
 		};
 
-		if (!!state.outlet.currentState && state.routeContent.html !== null && state.outlet.currentState.route.onUnloadState) {
-			outlet.currentState.route.onUnloadState(outlet.currentState);
+		if (this.shouldUnloadState(state.outlet.currentState, state.routeContent.html)) {
+			state.outlet.currentState.route.onUnloadState(state.outlet.currentState);
+			state.outlet.currentState.isUnloaded = true;
 		}
 		this.handleRoute(state);
 	}
