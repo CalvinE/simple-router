@@ -169,10 +169,11 @@ class SimpleUIRouter {
 			link: link,
 			outlet: outlet,
 			route: selectedRoute.route,
-			params: selectedRoute.params
+			params: selectedRoute.params,
+			routeContent: selectedRoute.route.cloneContent() // We are cloneing it here so that it can be
 		};
-		// console.log('check this!', state, (!!state.outlet.currentState), (state.route.content.html !== null), (!!state.outlet.currentState && !!state.outlet.currentState.route.onUnloadState));
-		if (!!state.outlet.currentState && state.route.content.html !== null && state.outlet.currentState.route.onUnloadState) {
+
+		if (!!state.outlet.currentState && state.routeContent.html !== null && state.outlet.currentState.route.onUnloadState) {
 			outlet.currentState.route.onUnloadState(outlet.currentState);
 		}
 		this.handleRoute(state);
@@ -190,8 +191,8 @@ class SimpleUIRouter {
 
 			this.fetch(state);
 		} else {
-			if (state.route.content.html && state.route.content.html[0].loaded === true) {
-				state.templateTextInstance = state.route.content.html[0].template;
+			if (state.routeContent.html && state.routeContent.html[0].loaded === true) {
+				state.templateTextInstance = state.routeContent.html[0].template;
 			}
 			this.postFetch(state);
 		}
@@ -199,7 +200,7 @@ class SimpleUIRouter {
 
 	fetch (state, method = 'GET', headers = null, user = null, password = null) {
 		var xhr = new window.XMLHttpRequest();
-		xhr.open(method, state.route.content.html[0].url, true, user, password);
+		xhr.open(method, state.routeContent.html[0].url, true, user, password);
 		xhr.onerror = this.handleFetchFailure;
 		if (headers) {
 			headers.forEach(function (header) {
@@ -212,6 +213,8 @@ class SimpleUIRouter {
 				state.route.content.html[0].template = xhr.responseText;
 				state.route.content.html[0].loaded = true;
 				state.templateTextInstance = xhr.responseText;
+				state.routeContent.html[0].template = xhr.responseText;
+				state.routeContent.html[0].loaded = true;
 
 				if (state.route.onPostFetchContent) {
 					state.route.onPostFetchContent(state);
@@ -251,7 +254,7 @@ class SimpleUIRouter {
 		let head = document.getElementsByTagName('head')[0];
 		let needToWait = false;
 		state.didLoad = true;
-		const content = state.route.content;
+		const content = state.routeContent;
 
 		if (!state.route.isLoaded('css')) { // Right now we only support css loading via URL.
 			needToWait = true;
@@ -265,7 +268,8 @@ class SimpleUIRouter {
 					link.media = 'all';
 					link.onload = () => {
 						state.route.content.css[link.srindex].loaded = true;
-						this._loadedURLs.push(state.route.content.css[link.srindex].url);
+						state.routeContent.css[link.srindex].loaded = true;
+						this._loadedURLs.push(state.routeContent.css[link.srindex].url);
 						this.postLoad(state);
 					};
 					head.appendChild(link);
@@ -283,7 +287,8 @@ class SimpleUIRouter {
 					script.srindex = i;
 					script.onload = () => {
 						state.route.content.js[script.srindex].loaded = true;
-						this._loadedURLs.push(state.route.content.js[script.srindex].url);
+						state.routeContent.js[script.srindex].loaded = true;
+						this._loadedURLs.push(state.routeContent.js[script.srindex].url);
 						this.postLoad(state);
 					};
 					head.appendChild(script);
@@ -331,7 +336,7 @@ class SimpleUIRouter {
 
 			this._isRouting = false;
 
-			if (state.route.content.html !== null) {
+			if (state.routeContent.html !== null) { // Is this the right criteria for maintaining state.
 				state.outlet.currentState = state;
 			}
 

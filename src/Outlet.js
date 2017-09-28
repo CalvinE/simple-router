@@ -1,8 +1,9 @@
 export class Outlet {
-	constructor (element, name) {
+	constructor (element, name, defaulltRoute) {
 		this.element = element;
 		this.name = name;
 		this.isMain = name === 'main';
+		this.defaultRoute = defaulltRoute;
 		this.currentState = null;
 	}
 

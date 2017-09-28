@@ -83,6 +83,10 @@ export class Route {
 		};
 	}
 
+	cloneContent () {
+		return JSON.parse(JSON.stringify(this.content));
+	}
+
 	isLoaded (prop) {
 		return (!this.content[prop]) || (!!this.content[prop] && !this.content[prop].find((item) => { return item.loaded === false; }));
 	}
