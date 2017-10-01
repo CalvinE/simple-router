@@ -38,6 +38,10 @@ router.registerRoute('/log', {
 	}
 });
 
+router.registerRoute('/nestedOutletTest', {
+
+}, './nested-template.html');
+
 router.registerRoute('/redirect', {
 	onPostRoutingHandler: (state) => {
 		window.location.hash = '/home/456';

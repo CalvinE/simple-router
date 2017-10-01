@@ -28,7 +28,7 @@ class SimpleUIRouter {
 
 		if (window.location.hash.length === 0) {
 			// window.location.hash = '/'; // Route to the default route
-			this.onHashChange(this._mainOutlet._defaultRoute || '/');
+			this.onHashChange(this._mainOutlet.defaultRoute || '/');
 		} else {
 			this.onHashChange(); // Route to whatever is in the url
 		}
@@ -36,12 +36,19 @@ class SimpleUIRouter {
 
 	onHashChange (event) {
 		if (!this._ignoreHashChange) {
-			let hash = (typeof event === 'string' || window.location.hash.length === 0) ? '/' : window.location.hash.substring(1);
+			let hash = null; // (typeof event === 'string' || window.location.hash.length === 0) ? '/' : window.location.hash.substring(1);
+			if (!!event && typeof event === 'string' && window.location.hash.length === 0) {
+				hash = event;
+			} else if (window.location.hash.length > 0) {
+				hash = window.location.hash.substring(1);
+			} else {
+				hash = '/';
+			}
 			let link = {
 				url: hash,
 				outlet: this._mainOutlet
 			};
-			this.initRouteHandling(link, this._mainOutlet);
+			this.initRouteHandling(link);
 		} else {
 			this._ignoreHashChange = false;
 		}
@@ -53,16 +60,27 @@ class SimpleUIRouter {
 			if (!element.isRegistered) {
 				element.isRegistered = true;
 				let defaultRoute = this.getAttributeValueByName(element, 'default-route') || null;
-				let outlet = new Outlet(element, this.getAttributeValueByName(element, selector));
+				let outlet = new Outlet(element, this.getAttributeValueByName(element, selector), defaultRoute);
 				this._outlets.push(outlet);
-				if (!!defaultRoute && outlet.isMain === false) {
-					// TODO: route outlet to default route.
-				}
 			}
 		}, this);
 		if (!!!this.getMainOutlet()) {
 			throw 'A main outlet is required.';
 		}
+	}
+
+	processDefaultRoutes () {
+		this._outlets.forEach((outlet) => {
+			if (!!outlet.defaultRouteProcessed === false && outlet.isMain === false) {
+				// TODO: route outlet to default route.
+				outlet.defaultRouteProcessed = true;
+				let link = {
+					url: outlet.defaultRoute,
+					outlet: outlet
+				};
+				this.initRouteHandling(link);
+			}
+		});
 	}
 
 	getMainOutlet () {
@@ -175,21 +193,21 @@ class SimpleUIRouter {
 		this.initRouteHandling(link, outlet);
 	}
 
-	initRouteHandling (link, outlet) {
+	initRouteHandling (link) {
 		this._isRouting = true;
 		const selectedRoute = this.findRoute(link);
 		const state = {
 			link: link,
-			outlet: outlet,
+			// outlet: link.outlet,
 			route: selectedRoute.route,
 			params: selectedRoute.params,
 			routeContent: selectedRoute.route.cloneContent(), // We are cloneing it here so that it can be
 			isUnloaded: false
 		};
 
-		if (this.shouldUnloadState(state.outlet.currentState, state.routeContent.html)) {
-			state.outlet.currentState.route.onUnloadState(state.outlet.currentState);
-			state.outlet.currentState.isUnloaded = true;
+		if (this.shouldUnloadState(state.link.outlet.currentState, state.routeContent.html)) {
+			state.link.outlet.currentState.route.onUnloadState(state.link.outlet.currentState);
+			state.link.outlet.currentState.isUnloaded = true;
 		}
 		this.handleRoute(state);
 	}
@@ -261,7 +279,7 @@ class SimpleUIRouter {
 	loadTemplate (state) {
 		if (!!state.templateTextInstance) {
 			state.tempalteLoaded = true;
-			state.outlet.addContentString(state.templateTextInstance);
+			state.link.outlet.addContentString(state.templateTextInstance);
 		}
 	}
 
@@ -347,12 +365,13 @@ class SimpleUIRouter {
 
 			this.findOutlets();
 			this.findLinks();
+			this.processDefaultRoutes();
 			this._mainOutlet = this.getMainOutlet();
 
 			this._isRouting = false;
 
 			if (state.routeContent.html !== null) { // Is this the right criteria for maintaining state.
-				state.outlet.currentState = state;
+				state.link.outlet.currentState = state;
 			}
 
 			if (state.route.onPostRoutingHandler) {
