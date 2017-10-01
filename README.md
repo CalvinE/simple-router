@@ -24,9 +24,10 @@ The aim here is to have a simple pure JS UI router for applications where a full
 
 ### Attributes that signify links and outlets in HTML
 * Links are signified by the attribute `route-url` where the value of that attribute is url to be used in routing. Links can also specify `route-target` which tells the router which outlet the link is targeting. If `route-target` is not specified for a link the it targets the main outlet by default.
-* Outlets are signified by the attribute `router-outlet` where the value of that attribute is the name of the outlet used for targeting them from links. A few notes on outlets are...
+* Outlets are signified by the attribute `router-outlet` where the value of that attribute is the name of the outlet used for targeting them from links. You can also not provide a name with the attribute and just load a default route to the outlet using the `default-route` attribute. A few notes on outlets are...
     * There must be an outlet with `router-outlet="main"` or the router will not start. this is the default outlet.
     * The main outlet is the only outlet that is affected by the  default route and any other outlets will not run the default route.
+    * You can specify a specific route as a default route for any outlet by giving it a route as the value to the `default-route` property.
 
 ### Examples
 * Run `./node_modules/http-server/bin/http-server` from the root of the project and navigate to the example folder. ex. 127.0.0.1:8080/example make sure of the correct port by reading the output form http-server.
